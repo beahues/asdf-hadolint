@@ -33,6 +33,22 @@ list_all_versions() {
   list_github_tags
 }
 
+github_macos_version() {
+  local version
+  version="$1"
+  local major minor patch
+  IFS='.' read -r -a array <<< "$version"
+  major=${array[0]}
+  minor=${array[1]}
+  patch=${array[2]}
+
+  if (( major >= 3 || (major == 2 && minor >= 13) )) ; then
+    return
+  fi
+
+  return 1
+}
+
 download_release() {
   local version filename uname_s uname_m os arch url
   version="$1"
@@ -42,7 +58,13 @@ download_release() {
   uname_m="$(uname -m)"
 
   case "$uname_s" in
-    Darwin) os="Darwin" ;;
+    Darwin)
+      if github_macos_version "$version"; then
+        os="macos"
+      else
+        os="Darwin"
+      fi
+      ;;
     Linux) os="Linux" ;;
     *) fail "OS not supported: $uname_s" ;;
   esac
